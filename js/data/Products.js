@@ -18,5 +18,5 @@ export const PAY_METHODS = [
   { id: 'card',          label: 'Card',          icon: '💳', hint: 'Visa, Mastercard, Verve' },
   { id: 'bank_transfer', label: 'Bank Transfer', icon: '🏦', hint: 'Transfer to a one-time account' },
   { id: 'ussd',          label: 'USSD',          icon: '#️⃣', hint: 'Dial a code on any phone' },
-  { id: 'mobile_money',  label: 'MTN MoMo',      icon: '📱', hint: 'Pay from your MoMo wallet' },
+  { id: 'mobile_money',  label: 'MTN MoMo',      icon: '📱', hint: 'Pay from your MoMo wallet', comingSoon: true },
 ];

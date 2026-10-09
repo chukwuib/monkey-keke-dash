@@ -487,9 +487,10 @@ export class UIManager {
     if (isWeb) {
       const methods = this._el('store-methods');
       methods.innerHTML = PAY_METHODS.map(m => `
-        <button class="store-method ${m.id === this._storeMethod ? 'active' : ''}" data-method="${m.id}">
+        <button class="store-method ${m.id === this._storeMethod ? 'active' : ''} ${m.comingSoon ? 'soon' : ''}"
+                data-method="${m.id}" ${m.comingSoon ? 'disabled' : ''}>
           <span class="m-icon">${m.icon}</span>
-          <span><span class="m-label">${m.label}</span><br><span class="m-hint">${m.hint}</span></span>
+          <span><span class="m-label">${m.label}${m.comingSoon ? ' <span class="m-soon">(Coming Soon)</span>' : ''}</span><br><span class="m-hint">${m.hint}</span></span>
         </button>`).join('');
       methods.querySelectorAll('.store-method').forEach(b => b.addEventListener('click', () => {
         this._storeMethod = b.dataset.method;

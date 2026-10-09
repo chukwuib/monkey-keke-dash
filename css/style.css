@@ -997,3 +997,5 @@ body.police-chase::before {
 .store-status.ok { color: #00FF88; }
 .store-status.err { color: #FF7A66; }
 .store-status.wait { color: var(--gold); }
+.store-method.soon { opacity: 0.55; cursor: default; }
+.store-method .m-soon { color: var(--gold); font-size: 11px; font-weight: 800; white-space: nowrap; }
