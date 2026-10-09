@@ -319,7 +319,7 @@ export class GameManager {
     return true;
   }
 
-  // Paid ₦50 continue from the game-over screen: full lives, back on the road.
+  // Paid ₦100 continue from the game-over screen: full lives, back on the road.
   continueRun() {
     this.lives = this.maxLives;
     this.caughtByPolice = false;

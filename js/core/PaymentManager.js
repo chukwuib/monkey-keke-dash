@@ -14,7 +14,7 @@ import { PRODUCTS, productById } from '../data/Products.js';
 const PENDING_KEY = 'mkd_pending_pay';   // Paystack refs paid but not yet confirmed
 const CLAIMED_KEY = 'mkd_claimed_pay';   // refs / Play transaction ids already granted
 const EMAIL_KEY = 'mkd_pay_email';
-const LATE_CONTINUE_COINS = 500;         // a continue confirmed after the run ended
+const LATE_CONTINUE_COINS = 1000;         // a continue confirmed after the run ended
 
 const readJSON = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } };
 const writeJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage full / blocked */ } };
@@ -33,7 +33,14 @@ export class PaymentManager {
 
   // ── Public API ────────────────────────────────────────────────────────────
   isAvailable() {
-    return this.platform === 'play' ? this.playReady : !!PAYSTACK_PUBLIC_KEY;
+    return this.platform === 'play' ? this.hasPlayProducts() : !!PAYSTACK_PUBLIC_KEY;
+  }
+
+  // True once Google Play has returned at least one of our products (they must
+  // be created + activated in Play Console). Until then the app hides the store.
+  hasPlayProducts() {
+    const store = this._playStore();
+    return this.playReady && !!store && PRODUCTS.some(p => store.get(p.id)?.pricing);
   }
 
   priceLabel(product) {

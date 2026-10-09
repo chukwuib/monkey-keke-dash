@@ -1,7 +1,7 @@
 // Monkey Keke Dash — PWA service worker.
 // tools_buildweb.cjs fills in VERSION and PRECACHE when it copies this file
 // into www/, so every build gets a fresh cache and old ones are dropped.
-const VERSION = '20261009112449';
+const VERSION = '20261009115500';
 const PRECACHE = [
   "./",
   "./index.html",

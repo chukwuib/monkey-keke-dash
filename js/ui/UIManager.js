@@ -332,7 +332,9 @@ export class UIManager {
     this.payment.onPricesChanged = () => {
       if (this.activeScreen === 'screen-store') this._renderStore();
       this._updateContinueButton();
+      this._updateStoreEntryPoints();
     };
+    this._updateStoreEntryPoints();
 
     this._el('btn-go-restart')?.addEventListener('click', () => {
       this.audio.resume();
@@ -433,7 +435,7 @@ export class UIManager {
   }
 
   // ── Store / payment page ────────────────────────────────────────────────
-  // opts.only = show a single product (the ₦50 continue); opts.back = screen to return to.
+  // opts.only = show a single product (the ₦100 continue); opts.back = screen to return to.
   _openStore(opts = {}) {
     this._storeOpts = opts;
     if (!this._storeMethod) this._storeMethod = PAY_METHODS[0].id;
@@ -541,9 +543,23 @@ export class UIManager {
     if (btn && p) btn.textContent = `💳 CONTINUE FOR ${this.payment.priceLabel(p)}`;
   }
 
+  // Web always shows the store (it explains when payments are off). The Play app
+  // only shows it once Google Play has returned real products.
+  _storeVisible() {
+    return this.payment.platform === 'paystack' || this.payment.hasPlayProducts();
+  }
+
+  _updateStoreEntryPoints() {
+    const show = this._storeVisible();
+    const menuBtn = this._el('btn-store');
+    if (menuBtn) menuBtn.style.display = show ? '' : 'none';
+    const cont = this._el('btn-continue-payment')?.parentElement;
+    if (cont) cont.style.display = show ? '' : 'none';
+  }
+
   _updateBailAffordable(bailCost) {
     const buyBtn = this._el('btn-bail-buy');
-    if (buyBtn) buyBtn.style.display = this.gm.totalCoins < bailCost ? '' : 'none';
+    if (buyBtn) buyBtn.style.display = this._storeVisible() && this.gm.totalCoins < bailCost ? '' : 'none';
     const btn = this._el('btn-pay-bail');
     if (this.gm.totalCoins < bailCost) {
       btn.disabled = true;

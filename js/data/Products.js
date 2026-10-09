@@ -5,10 +5,12 @@
 // The Supabase `paystack-verify` function keeps its own copy of these prices
 // and re-checks the amount server-side, so edit both together.
 export const PRODUCTS = [
-  { id: 'coins_1000', kind: 'coins', coins: 1000, naira: 200,  title: '1,000 Coins',  tag: '' },
-  { id: 'coins_3500', kind: 'coins', coins: 3500, naira: 500,  title: '3,500 Coins',  tag: 'POPULAR' },
-  { id: 'coins_8000', kind: 'coins', coins: 8000, naira: 1000, title: '8,000 Coins',  tag: 'BEST VALUE' },
-  { id: 'continue_run', kind: 'continue', naira: 50, title: 'Continue Run', tag: '' },
+  // Play product ids are permanent, so they name the pack, not the coin amount.
+  { id: 'pack_starter', kind: 'coins', coins: 2500,  naira: 200,  title: '2,500 Coins',  tag: '' },
+  { id: 'pack_popular', kind: 'coins', coins: 7000,  naira: 500,  title: '7,000 Coins',  tag: 'POPULAR' },
+  { id: 'pack_big',     kind: 'coins', coins: 15000, naira: 1000, title: '15,000 Coins', tag: '' },
+  { id: 'pack_best',    kind: 'coins', coins: 40000, naira: 2500, title: '40,000 Coins', tag: 'BEST VALUE' },
+  { id: 'continue_run', kind: 'continue', naira: 100, title: 'Continue Run', tag: '' },
 ];
 
 export const productById = id => PRODUCTS.find(p => p.id === id);
