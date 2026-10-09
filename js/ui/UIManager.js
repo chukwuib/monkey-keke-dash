@@ -3,6 +3,7 @@ import { DailyReward, DAILY_REWARDS } from '../core/DailyReward.js';
 import { Stats } from '../core/Stats.js';
 import { Leaderboard } from '../core/Leaderboard.js';
 import { PaymentManager } from '../core/PaymentManager.js';
+import { PRODUCTS, PAY_METHODS, productById } from '../data/Products.js';
 
 // Garage thumbnails. Vehicles with cut-out sprite art show the real image;
 // the two without art yet (okada, innoson) fall back to an emoji placeholder.
@@ -139,6 +140,13 @@ export class UIManager {
       this._el('menu-total-coins').textContent = this.gm.totalCoins.toLocaleString();
     });
 
+    this.gm.on('runContinued', ({ lives }) => {
+      this.show('screen-hud');
+      this._updateLives(lives);
+      this._updateHUD();
+      this._floatText('❤️ PAID CONTINUE — GO GO GO!', 0, -60, '#00FF88');
+    });
+
     this.gm.on('adWatched', ({ adsLeft }) => {
       this.show('screen-hud');
       this._updateHUD();
@@ -175,6 +183,7 @@ export class UIManager {
       this.leaderboard.submitScore(this.stats.bestDistance(), stats.state);
       setTimeout(() => {
         this.show('screen-gameover');
+        this._updateContinueButton();
         this._el('go-distance').textContent = Math.floor(stats.distance).toLocaleString();
         this._el('go-coins').textContent = stats.coins.toLocaleString();
         this._el('go-state').textContent = stats.state;
@@ -312,22 +321,18 @@ export class UIManager {
     });
 
     // Game over
-    this._el('btn-continue-payment')?.addEventListener('click', async () => {
-      const btn = this._el('btn-continue-payment');
-      btn.disabled = true;
-      btn.textContent = '⏳ Processing...';
+    this._el('btn-continue-payment')?.addEventListener('click', () =>
+      this._openStore({ only: 'continue_run', back: 'screen-gameover' }));
 
-      const result = await this.payment.initiatePayment();
-
-      if (result.success) {
-        this._floatText('✅ Payment Success!', 2000, 'rgba(0,255,0,0.8)');
-        this.show('screen-hud');
-      } else {
-        this._floatText(`❌ ${result.message}`, 2000, 'rgba(255,0,0,0.8)');
-        btn.disabled = false;
-        btn.textContent = '💳 CONTINUE FOR ₦50';
-      }
-    });
+    // Store / payment page
+    this._el('btn-store')?.addEventListener('click', () => this._openStore({ back: 'screen-menu' }));
+    this._el('btn-bail-buy')?.addEventListener('click', () => this._openStore({ back: 'screen-bail' }));
+    this._el('btn-store-close')?.addEventListener('click', () => this._closeStore());
+    this.payment.onGrant = (product, info) => this._onPaymentGranted(product, info);
+    this.payment.onPricesChanged = () => {
+      if (this.activeScreen === 'screen-store') this._renderStore();
+      this._updateContinueButton();
+    };
 
     this._el('btn-go-restart')?.addEventListener('click', () => {
       this.audio.resume();
@@ -427,7 +432,117 @@ export class UIManager {
     });
   }
 
+  // ── Store / payment page ────────────────────────────────────────────────
+  // opts.only = show a single product (the ₦50 continue); opts.back = screen to return to.
+  _openStore(opts = {}) {
+    this._storeOpts = opts;
+    if (!this._storeMethod) this._storeMethod = PAY_METHODS[0].id;
+    const emailEl = this._el('store-email');
+    if (emailEl && !emailEl.value) emailEl.value = this.payment.email;
+    this._setStoreStatus('');
+    this._renderStore();
+    this.show('screen-store');
+  }
+
+  _closeStore() {
+    const back = this._storeOpts?.back || 'screen-menu';
+    this.show(back);
+    if (back === 'screen-bail') {
+      this._updateBailAffordable(this.gm.bailCost);
+    } else if (back === 'screen-menu') {
+      this._updateMenuCoins();
+    }
+  }
+
+  _renderStore() {
+    const { only } = this._storeOpts || {};
+    const isWeb = this.payment.platform === 'paystack';
+    const items = PRODUCTS.filter(p => only ? p.id === only : p.kind === 'coins');
+    this._el('store-title').textContent = only ? '💳 CONTINUE YOUR RUN' : '💳 BUY COINS';
+    this._el('store-wallet').textContent = this.gm.totalCoins.toLocaleString();
+
+    const notice = this._el('store-notice');
+    const live = this.payment.isAvailable();
+    notice.style.display = live ? 'none' : '';
+    notice.textContent = isWeb ? '🚧 Payments are being set up — check back soon!'
+                               : '⏳ Connecting to Google Play…';
+
+    const list = this._el('store-items');
+    list.innerHTML = items.map(p => `
+      <button class="store-item" data-id="${p.id}" ${live ? '' : 'disabled'}>
+        ${p.tag ? `<span class="store-tag">${p.tag}</span>` : ''}
+        <span class="store-icon">${p.kind === 'coins' ? '🪙' : '❤️'}</span>
+        <span class="store-info">
+          <span class="store-name">${p.title}</span>
+          <span class="store-sub">${p.kind === 'coins' ? 'Unlock vehicles, pay bail, shop' : 'Full lives — carry on from here'}</span>
+        </span>
+        <span class="store-price">${this.payment.priceLabel(p)}</span>
+      </button>`).join('');
+    list.querySelectorAll('.store-item').forEach(b =>
+      b.addEventListener('click', () => this._buyProduct(b.dataset.id)));
+
+    // Payment method picker + receipt email are web-only (Google Play has its own sheet).
+    this._el('store-web-pay').style.display = isWeb ? '' : 'none';
+    this._el('store-play-note').style.display = isWeb ? 'none' : '';
+    if (isWeb) {
+      const methods = this._el('store-methods');
+      methods.innerHTML = PAY_METHODS.map(m => `
+        <button class="store-method ${m.id === this._storeMethod ? 'active' : ''}" data-method="${m.id}">
+          <span class="m-icon">${m.icon}</span>
+          <span><span class="m-label">${m.label}</span><br><span class="m-hint">${m.hint}</span></span>
+        </button>`).join('');
+      methods.querySelectorAll('.store-method').forEach(b => b.addEventListener('click', () => {
+        this._storeMethod = b.dataset.method;
+        methods.querySelectorAll('.store-method').forEach(x => x.classList.toggle('active', x === b));
+      }));
+    }
+  }
+
+  _setStoreStatus(text, kind = '') {
+    const el = this._el('store-status');
+    if (!el) return;
+    el.textContent = text;
+    el.className = `store-status ${kind}`;
+  }
+
+  async _buyProduct(productId) {
+    const email = this._el('store-email')?.value.trim() || '';
+    this._setStoreStatus('⏳ Opening secure checkout…', 'wait');
+    const buttons = this._el('store-items').querySelectorAll('.store-item');
+    buttons.forEach(b => { b.disabled = true; });
+    const result = await this.payment.buy(productId, { method: this._storeMethod, email });
+    buttons.forEach(b => { b.disabled = false; });
+    if (result.success) {
+      this._setStoreStatus(`✅ ${result.message}`, 'ok');
+    } else {
+      this._setStoreStatus(`${result.pending ? '⏳' : '❌'} ${result.message}`, result.pending ? 'wait' : 'err');
+    }
+  }
+
+  // Called by PaymentManager whenever a payment is granted (including late /
+  // retried confirmations and Play purchases recovered on startup).
+  _onPaymentGranted(product, info) {
+    if (info.continued) {
+      this.show('screen-hud'); // runContinued handler shows the toast
+      return;
+    }
+    if (this.activeScreen === 'screen-store') this._renderStore();
+    this._updateMenuCoins();
+    const msg = info.lateContinue
+      ? `Your continue came through late — here's 🪙 ${info.coins.toLocaleString()} instead!`
+      : `🪙 +${info.coins.toLocaleString()} coins added!`;
+    this._showMissionToast('PAYMENT CONFIRMED', msg);
+  }
+
+  _updateContinueButton() {
+    const btn = this._el('btn-continue-payment');
+    const p = productById('continue_run');
+    if (btn && p) btn.textContent = `💳 CONTINUE FOR ${this.payment.priceLabel(p)}`;
+  }
+
   _updateBailAffordable(bailCost) {
+    const buyBtn = this._el('btn-bail-buy');
+    if (buyBtn) buyBtn.style.display = this.gm.totalCoins < bailCost ? '' : 'none';
     const btn = this._el('btn-pay-bail');
     if (this.gm.totalCoins < bailCost) {
       btn.disabled = true;

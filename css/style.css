@@ -23,7 +23,7 @@ html, body {
   touch-action: none;
 }
 /* Re-allow vertical scrolling inside menu panels that can overflow. */
-.panel, #garage-items, #shop-items, #lb-scores, #missions-list { touch-action: pan-y; }
+.panel, #garage-items, #shop-items, #lb-scores, #missions-list, #store-items { touch-action: pan-y; }
 
 #gameCanvas {
   display: block;
@@ -945,3 +945,55 @@ body.police-chase::before {
   border-radius: 14px; padding: 6px 14px; font-size: 14px; white-space: nowrap;
 }
 .ads-left { display: block; font-size: 0.6em; opacity: 0.8; letter-spacing: 1px; }
+
+/* ─── STORE / PAYMENT PAGE ────────────────────────────────── */
+.store-panel { border-color: var(--gold); box-shadow: 0 0 40px rgba(255,215,0,0.25); max-width: 460px; max-height: 92vh; overflow-y: auto; }
+.store-panel h2 { color: var(--gold); font-size: 34px; }
+.store-notice {
+  width: 100%; background: rgba(255,102,0,0.15); border: 1px solid var(--orange);
+  color: #FFC48A; border-radius: 10px; padding: 8px 12px; font-size: 13px; text-align: center;
+}
+#store-items { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.store-item {
+  position: relative; display: flex; align-items: center; gap: 12px; width: 100%;
+  background: rgba(255,255,255,0.06); border: 2px solid rgba(255,215,0,0.35);
+  border-radius: 14px; padding: 12px 14px; cursor: pointer; pointer-events: auto;
+  color: #fff; font-family: 'Nunito', sans-serif; text-align: left;
+}
+.store-item:active { transform: scale(0.98); }
+.store-item:disabled { opacity: 0.5; cursor: default; }
+.store-icon { font-size: 34px; flex-shrink: 0; width: 44px; text-align: center; }
+.store-info { flex: 1; min-width: 0; }
+.store-name { display: block; font-weight: 900; font-size: 18px; }
+.store-sub { display: block; color: rgba(255,255,255,0.55); font-size: 12px; }
+.store-price {
+  flex-shrink: 0; background: linear-gradient(135deg, #FFB81C, #FFA500); color: #1A1000;
+  font-weight: 900; font-size: 16px; border-radius: 22px; padding: 8px 16px; white-space: nowrap;
+}
+.store-tag {
+  position: absolute; top: -9px; right: 14px; background: var(--green); color: #fff;
+  font-size: 10px; font-weight: 900; letter-spacing: 1px; border-radius: 8px; padding: 2px 8px;
+}
+#store-web-pay { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.store-label { color: rgba(255,255,255,0.6); font-size: 13px; text-align: left; }
+.store-methods { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.store-method {
+  display: flex; align-items: center; gap: 8px; cursor: pointer; pointer-events: auto;
+  background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.18); border-radius: 12px;
+  padding: 9px 10px; color: #fff; font-family: 'Nunito', sans-serif; text-align: left;
+}
+.store-method.active { border-color: var(--gold); background: rgba(255,215,0,0.12); }
+.store-method .m-icon { font-size: 20px; }
+.store-method .m-label { font-weight: 900; font-size: 14px; line-height: 1.1; }
+.store-method .m-hint { color: rgba(255,255,255,0.5); font-size: 10px; line-height: 1.2; }
+.store-email {
+  width: 100%; padding: 10px 12px; border-radius: 10px; border: 2px solid rgba(255,255,255,0.2);
+  background: rgba(0,0,0,0.35); color: #fff; font-size: 15px; font-family: 'Nunito', sans-serif;
+  user-select: text; -webkit-user-select: text; pointer-events: auto;
+}
+.store-email:focus { outline: none; border-color: var(--gold); }
+.store-play-note { color: rgba(255,255,255,0.6); font-size: 13px; }
+.store-status { min-height: 18px; font-size: 14px; font-weight: 800; text-align: center; }
+.store-status.ok { color: #00FF88; }
+.store-status.err { color: #FF7A66; }
+.store-status.wait { color: var(--gold); }

@@ -319,6 +319,18 @@ export class GameManager {
     return true;
   }
 
+  // Paid ₦50 continue from the game-over screen: full lives, back on the road.
+  continueRun() {
+    this.lives = this.maxLives;
+    this.caughtByPolice = false;
+    this.policeChasing = false;
+    this._failReason = null;
+    if (this.timeLeft <= 0) this.timeLeft = Math.max(15, this.levelDuration * 0.35);
+    this.state = 'PLAYING';
+    this.emit('policeChaseEnded', {});
+    this.emit('runContinued', { lives: this.lives });
+  }
+
   gameOver() {
     this.state = 'GAMEOVER';
     this.saveProgress();

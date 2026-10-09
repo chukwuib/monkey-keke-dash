@@ -14,3 +14,14 @@ export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 // True only when both values above are present.
 export const LEADERBOARD_ONLINE = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+
+// ─── Payments (web / PWA — Paystack) ────────────────────────────────────────
+// Paste the Paystack PUBLIC key here (pk_test_… while testing, pk_live_… to go
+// live). Blank = the store page shows but payments are switched off.
+// The SECRET key never goes in the game: it lives only in the Supabase Edge
+// Function `paystack-verify`, which confirms each payment before coins are
+// granted. See PAYMENTS-SETUP.md.
+export const PAYSTACK_PUBLIC_KEY = '';
+export const PAYSTACK_VERIFY_URL = `${SUPABASE_URL}/functions/v1/paystack-verify`;
+// The Android (Play Store) build uses Google Play Billing instead — products
+// are set up in Play Console with the ids in js/data/Products.js.
