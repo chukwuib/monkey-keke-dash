@@ -328,6 +328,7 @@ export class UIManager {
     this._el('btn-store')?.addEventListener('click', () => this._openStore({ back: 'screen-menu' }));
     this._el('btn-bail-buy')?.addEventListener('click', () => this._openStore({ back: 'screen-bail' }));
     this._el('btn-store-close')?.addEventListener('click', () => this._closeStore());
+    this._el('btn-store-pay')?.addEventListener('click', () => this._buyProduct(this._storeProduct));
     this.payment.onGrant = (product, info) => this._onPaymentGranted(product, info);
     this.payment.onPricesChanged = () => {
       if (this.activeScreen === 'screen-store') this._renderStore();
@@ -438,7 +439,9 @@ export class UIManager {
   // opts.only = show a single product (the ₦100 continue); opts.back = screen to return to.
   _openStore(opts = {}) {
     this._storeOpts = opts;
-    if (!this._storeMethod) this._storeMethod = PAY_METHODS[0].id;
+    if (!this.payment.methodAvailable?.(this._storeMethod)) this._storeMethod = this._firstMethod();
+    // The continue screen has a single product, so it starts selected.
+    this._storeProduct = opts.only || null;
     const emailEl = this._el('store-email');
     if (emailEl && !emailEl.value) emailEl.value = this.payment.email;
     this._setStoreStatus('');
@@ -458,7 +461,7 @@ export class UIManager {
 
   _renderStore() {
     const { only } = this._storeOpts || {};
-    const isWeb = this.payment.platform === 'paystack';
+    const isWeb = this.payment.platform === 'web';
     const items = PRODUCTS.filter(p => only ? p.id === only : p.kind === 'coins');
     this._el('store-title').textContent = only ? '💳 CONTINUE YOUR RUN' : '💳 BUY COINS';
     this._el('store-wallet').textContent = this.gm.totalCoins.toLocaleString();
@@ -469,9 +472,14 @@ export class UIManager {
     notice.textContent = isWeb ? '🚧 Payments are being set up — check back soon!'
                                : '⏳ Connecting to Google Play…';
 
+    const testEl = this._el('store-test');
+    if (testEl) testEl.style.display = isWeb && live && this.payment.isTestMode() ? '' : 'none';
+    const stepEl = this._el('store-step-pack');
+    if (stepEl) stepEl.style.display = isWeb && !only ? '' : 'none';
+
     const list = this._el('store-items');
     list.innerHTML = items.map(p => `
-      <button class="store-item" data-id="${p.id}" ${live ? '' : 'disabled'}>
+      <button class="store-item ${isWeb && p.id === this._storeProduct ? 'selected' : ''}" data-id="${p.id}" ${live ? '' : 'disabled'}>
         ${p.tag ? `<span class="store-tag">${p.tag}</span>` : ''}
         <span class="store-icon">${p.kind === 'coins' ? '🪙' : '❤️'}</span>
         <span class="store-info">
@@ -480,25 +488,54 @@ export class UIManager {
         </span>
         <span class="store-price">${this.payment.priceLabel(p)}</span>
       </button>`).join('');
-    list.querySelectorAll('.store-item').forEach(b =>
-      b.addEventListener('click', () => this._buyProduct(b.dataset.id)));
+    // Google Play shows its own sheet, so a tap buys straight away. On the web a
+    // tap selects the pack; the PAY button below confirms pack + method together.
+    list.querySelectorAll('.store-item').forEach(b => b.addEventListener('click', () => {
+      if (!isWeb) return this._buyProduct(b.dataset.id);
+      this._storeProduct = b.dataset.id;
+      list.querySelectorAll('.store-item').forEach(x => x.classList.toggle('selected', x === b));
+      this._updateStorePayButton();
+    }));
 
     // Payment method picker + receipt email are web-only (Google Play has its own sheet).
     this._el('store-web-pay').style.display = isWeb ? '' : 'none';
     this._el('store-play-note').style.display = isWeb ? 'none' : '';
     if (isWeb) {
       const methods = this._el('store-methods');
-      methods.innerHTML = PAY_METHODS.map(m => `
-        <button class="store-method ${m.id === this._storeMethod ? 'active' : ''} ${m.comingSoon ? 'soon' : ''}"
-                data-method="${m.id}" ${m.comingSoon ? 'disabled' : ''}>
+      // A channel can become unavailable once the provider's list loads.
+      if (!this.payment.methodAvailable(this._storeMethod)) this._storeMethod = this._firstMethod();
+      methods.innerHTML = PAY_METHODS.map(m => {
+        const soon = !this.payment.methodAvailable(m.id);
+        return `
+        <button class="store-method ${m.id === this._storeMethod ? 'active' : ''} ${soon ? 'soon' : ''}"
+                data-method="${m.id}" ${soon ? 'disabled' : ''}>
           <span class="m-icon">${m.icon}</span>
-          <span><span class="m-label">${m.label}${m.comingSoon ? ' <span class="m-soon">(Coming Soon)</span>' : ''}</span><br><span class="m-hint">${m.hint}</span></span>
-        </button>`).join('');
+          <span><span class="m-label">${m.label}${soon ? ' <span class="m-soon">(Coming Soon)</span>' : ''}</span><br><span class="m-hint">${m.hint}</span></span>
+        </button>`;
+      }).join('');
       methods.querySelectorAll('.store-method').forEach(b => b.addEventListener('click', () => {
         this._storeMethod = b.dataset.method;
         methods.querySelectorAll('.store-method').forEach(x => x.classList.toggle('active', x === b));
+        this._updateStorePayButton();
       }));
+      this._updateStorePayButton();
     }
+  }
+
+  _firstMethod() {
+    return (PAY_METHODS.find(m => this.payment.methodAvailable?.(m.id)) || PAY_METHODS[0]).id;
+  }
+
+  _updateStorePayButton() {
+    const btn = this._el('btn-store-pay');
+    if (!btn) return;
+    const p = productById(this._storeProduct);
+    const m = PAY_METHODS.find(x => x.id === this._storeMethod);
+    const live = this.payment.isAvailable();
+    btn.disabled = !live || !p || this._storeBusy || !this.payment.methodAvailable(this._storeMethod);
+    btn.textContent = !live ? 'PAYMENTS COMING SOON'
+      : !p ? 'CHOOSE A PACK'
+      : `PAY ${this.payment.priceLabel(p)} WITH ${m.short.toUpperCase()}`;
   }
 
   _setStoreStatus(text, kind = '') {
@@ -509,12 +546,24 @@ export class UIManager {
   }
 
   async _buyProduct(productId) {
+    if (!productId || this._storeBusy) return;
     const email = this._el('store-email')?.value.trim() || '';
+    if (this.payment.platform === 'web' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      this._setStoreStatus('❌ Enter a valid email for your receipt', 'err');
+      this._el('store-email')?.focus();
+      return;
+    }
     this._setStoreStatus('⏳ Opening secure checkout…', 'wait');
+    this._storeBusy = true;
     const buttons = this._el('store-items').querySelectorAll('.store-item');
     buttons.forEach(b => { b.disabled = true; });
-    const result = await this.payment.buy(productId, { method: this._storeMethod, email });
+    this._updateStorePayButton();
+    const result = await this.payment.buy(productId, {
+      method: this._storeMethod, email, onStatus: text => this._setStoreStatus(text, 'wait'),
+    });
+    this._storeBusy = false;
     buttons.forEach(b => { b.disabled = false; });
+    this._updateStorePayButton();
     if (result.success) {
       this._setStoreStatus(`✅ ${result.message}`, 'ok');
     } else {
@@ -546,7 +595,7 @@ export class UIManager {
   // Web always shows the store (it explains when payments are off). The Play app
   // only shows it once Google Play has returned real products.
   _storeVisible() {
-    return this.payment.platform === 'paystack' || this.payment.hasPlayProducts();
+    return this.payment.platform === 'web' || this.payment.hasPlayProducts();
   }
 
   _updateStoreEntryPoints() {

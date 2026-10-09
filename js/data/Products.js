@@ -17,8 +17,11 @@ export const productById = id => PRODUCTS.find(p => p.id === id);
 
 // Paystack channels offered on the web store page, in display order.
 export const PAY_METHODS = [
-  { id: 'card',          label: 'Card',          icon: '💳', hint: 'Visa, Mastercard, Verve' },
-  { id: 'bank_transfer', label: 'Bank Transfer', icon: '🏦', hint: 'Transfer to a one-time account' },
-  { id: 'ussd',          label: 'USSD',          icon: '#️⃣', hint: 'Dial a code on any phone' },
-  { id: 'mobile_money',  label: 'MTN MoMo',      icon: '📱', hint: 'Pay from your MoMo wallet', comingSoon: true },
+  // `short` is used on the pay button: "PAY ₦500 WITH CARD".
+  // `foren` = FOREN pop-up channel name; null = FOREN doesn't offer it (shown as Coming Soon).
+  // Paystack uses `id` as its channel name.
+  { id: 'card',          label: 'Pay with Card',  short: 'Card',  icon: '💳', hint: 'Visa, Mastercard, Verve',      foren: 'Card' },
+  { id: 'bank_transfer', label: 'Pay with Bank',  short: 'Bank',  icon: '🏦', hint: 'Transfer from any bank app',   foren: 'PayByTransfer' },
+  { id: 'ussd',          label: 'Pay with USSD',  short: 'USSD',  icon: '#️⃣', hint: 'Dial a code — no data needed', foren: null },
+  { id: 'mobile_money',  label: 'Pay with MoMo',  short: 'MoMo',  icon: '📱', hint: 'MTN MoMo wallet',              foren: null, comingSoon: true },
 ];

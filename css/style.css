@@ -999,3 +999,40 @@ body.police-chase::before {
 .store-status.wait { color: var(--gold); }
 .store-method.soon { opacity: 0.55; cursor: default; }
 .store-method .m-soon { color: var(--gold); font-size: 11px; font-weight: 800; white-space: nowrap; }
+.store-item.selected { border-color: var(--gold); background: rgba(255,215,0,0.14); box-shadow: 0 0 0 2px rgba(255,215,0,0.35); }
+.store-test {
+  width: 100%; background: rgba(0,170,255,0.12); border: 1px dashed #4FC3F7; color: #B3E5FC;
+  border-radius: 10px; padding: 8px 12px; font-size: 12px; line-height: 1.5; text-align: center;
+}
+.store-pay { width: 100%; font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 18px; }
+.store-pay:disabled { opacity: 0.5; cursor: default; }
+.store-secure { color: rgba(255,255,255,0.55); font-size: 11px; text-align: center; }
+.store-help { color: rgba(255,255,255,0.4); font-size: 10px; text-align: center; line-height: 1.3; }
+@media (max-width: 360px) { .store-methods { grid-template-columns: 1fr; } }
+
+/* ─── DAILY RACE ─────────────────────────────────────────── */
+.race-panel h2 { color: #00FF88; }
+.race-tagline { color: var(--gold); font-weight: 900; font-size: 15px; text-align: center; letter-spacing: 0.5px; }
+.race-prize-box { width: 100%; text-align: center; background: rgba(0,135,90,0.18); border: 2px solid var(--green);
+  border-radius: 14px; padding: 10px; color: #fff; font-weight: 800; }
+.race-prize-box #race-prize { display: block; color: #00FF88; font-size: 30px; font-family: 'Nunito', sans-serif; font-weight: 900; }
+.race-muted { color: rgba(255,255,255,0.55); font-size: 12px; text-align: center; }
+.race-board { width: 100%; display: flex; flex-direction: column; gap: 4px; }
+.race-row { display: grid; grid-template-columns: 44px 1fr auto; gap: 8px; padding: 6px 10px; border-radius: 8px;
+  background: rgba(255,255,255,0.05); color: #fff; font-weight: 800; font-size: 14px; }
+.race-row.you { background: rgba(255,215,0,0.15); border: 1px solid var(--gold); }
+.race-claim { width: 100%; display: flex; flex-direction: column; gap: 6px; background: rgba(255,215,0,0.1);
+  border: 2px solid var(--gold); border-radius: 12px; padding: 10px; color: #fff; font-weight: 800; }
+.race-terms { color: rgba(255,255,255,0.75); font-size: 12px; display: flex; gap: 8px; align-items: flex-start; text-align: left; pointer-events: auto; }
+.race-terms input { margin-top: 2px; }
+.race-rules { width: 100%; color: rgba(255,255,255,0.7); font-size: 12px; text-align: left; pointer-events: auto; }
+.race-rules summary { cursor: pointer; color: var(--gold); font-weight: 800; }
+.race-rules ul { padding-left: 18px; margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+.race-result-text { color: #fff; font-size: 18px; text-align: center; line-height: 1.6; }
+.race-countdown { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-family: 'Bangers', sans-serif; font-size: 120px; color: #00FF88; text-shadow: 0 4px 20px rgba(0,0,0,0.6); }
+.race-hud { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 40; gap: 14px;
+  background: rgba(0,0,0,0.6); border: 2px solid #00FF88; border-radius: 22px; padding: 8px 16px;
+  color: #fff; font-weight: 900; font-size: 16px; white-space: nowrap; pointer-events: none; }
+#btn-race-pay { font-family: 'Nunito', sans-serif; font-weight: 900; }
+#btn-race-pay:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.6); }

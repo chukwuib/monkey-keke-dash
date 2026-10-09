@@ -24,6 +24,7 @@
 
   <!-- Three.js Canvas -->
   <canvas id="gameCanvas"></canvas>
+  <div id="race-hud" class="race-hud" style="display:none"></div>
 
   <!-- Blackout overlay for special effects -->
   <div id="blackout-overlay"></div>
@@ -54,6 +55,7 @@
         <button id="btn-missions" class="btn-secondary">🎯 MISSIONS</button>
         <button id="btn-shop" class="btn-secondary">🔧 GARAGE</button>
         <button id="btn-store" class="btn-secondary">💳 BUY COINS</button>
+        <button id="btn-race" class="btn-secondary" style="display:none">🏁 DAILY RACE</button>
         <button id="btn-leaderboard" class="btn-secondary">🏆 TOP RIDERS</button>
         <button id="btn-exit" class="btn-ghost">🚪 EXIT</button>
       </div>
@@ -224,16 +226,69 @@
         <h2 id="store-title">💳 BUY COINS</h2>
         <div class="garage-wallet">Your ₦: <span id="store-wallet">0</span></div>
         <div id="store-notice" class="store-notice" style="display:none"></div>
+        <div id="store-test" class="store-test" style="display:none">
+          🧪 <b>TEST MODE</b> — no real money is charged. Use your payment provider's test card / test account.
+        </div>
+        <div id="store-step-pack" class="store-label">1. Choose a pack</div>
         <div id="store-items"></div>
         <div id="store-web-pay">
-          <div class="store-label">Pay with</div>
+          <div class="store-label">2. Choose how to pay</div>
           <div id="store-methods" class="store-methods"></div>
-          <input id="store-email" class="store-email" type="email" inputmode="email" autocomplete="email" placeholder="Email for your receipt">
+          <div class="store-label">3. Email for your receipt</div>
+          <input id="store-email" class="store-email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
+          <button id="btn-store-pay" class="btn-primary store-pay" disabled>CHOOSE A PACK</button>
+          <div class="store-secure">🔒 Secure checkout · Your card and bank details never touch the game</div>
+          <div class="store-help">Paid but no coins? Keep the game open or reopen it — confirmed payments are added automatically.</div>
         </div>
         <div id="store-play-note" class="store-play-note" style="display:none">Payments are handled securely by Google Play.</div>
         <div id="store-status" class="store-status"></div>
         <button id="btn-store-close" class="btn-secondary">✕ BACK</button>
       </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         DAILY RACE (₦50 entry · win up to ₦10,000) — web only
+    ════════════════════════════════════════════════════════ -->
+    <div id="screen-race" class="screen overlay">
+      <div class="panel store-panel race-panel">
+        <h2>🏁 DAILY RACE</h2>
+        <div class="race-tagline">PLAY FOR ₦50. RACE DAILY. WIN UP TO ₦10,000.</div>
+        <div id="race-lobby">
+          <div id="race-closed-note" class="store-notice">🚧 The daily race is coming soon.</div>
+          <div class="race-prize-box">Today's prize <span id="race-prize">₦0</span><div id="race-meta" class="race-muted"></div></div>
+          <div id="race-board" class="race-board"></div>
+          <div id="race-claim-box" class="race-claim" style="display:none">
+            <div id="race-claim-text"></div>
+            <select id="race-bank" class="store-email"></select>
+            <input id="race-acct" class="store-email" inputmode="numeric" maxlength="10" placeholder="10-digit account number">
+            <button id="btn-race-claim" class="btn-secondary">SAVE BANK DETAILS</button>
+            <div id="race-claim-status" class="race-muted"></div>
+          </div>
+          <input id="race-name" class="store-email" maxlength="20" placeholder="Rider name (shown as Abc***)">
+          <input id="race-phone" class="store-email" inputmode="tel" placeholder="Nigerian phone, e.g. 0803 123 4567">
+          <input id="race-email" class="store-email" type="email" inputmode="email" placeholder="Email for your receipt">
+          <label class="race-terms"><input type="checkbox" id="race-terms"> I am 18+, in Nigeria, and accept the race rules below.</label>
+          <button id="btn-race-pay" class="btn-primary">💳 PAY ₦50 &amp; RACE</button>
+          <div id="race-status" class="store-status"></div>
+          <details class="race-rules"><summary>Race rules &amp; terms</summary>
+            <ul>
+              <li>Each ₦50 payment gives one race attempt in today's race (Nigeria time). Your best verified score of the day counts.</li>
+              <li>The highest-ranked eligible racer wins <b>1% of the day's total contributions, up to a maximum of ₦10,000</b>. The prize is not guaranteed to be ₦10,000.</li>
+              <li>One win per player per calendar month. If the top racer has already won this month, the prize goes to the next eligible racer.</li>
+              <li>Scores are verified by our race server. Runs that can't be verified are disqualified. Ties go to the earlier run.</li>
+              <li>The leaderboard closes at 11:59 pm Nigeria time. Winners are paid by bank transfer after review. Open to players in Nigeria aged 18+. Terms &amp; Conditions apply.</li>
+            </ul>
+          </details>
+        </div>
+        <div id="race-result" style="display:none">
+          <div id="race-result-text" class="race-result-text"></div>
+          <button id="btn-race-again" class="btn-primary">↺ BACK TO RACE LOBBY</button>
+        </div>
+        <button id="btn-race-close" class="btn-ghost">✕ CLOSE</button>
+      </div>
+    </div>
+    <div id="screen-race-play" class="screen overlay">
+      <div id="race-countdown" class="race-countdown">3</div>
     </div>
 
     <!-- ══════════════════════════════════════════════════════

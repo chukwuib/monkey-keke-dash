@@ -11,6 +11,8 @@ import { PowerUpManager } from './managers/PowerUpManager.js';
 import { ShopManager } from './managers/ShopManager.js';
 import { MissionManager } from './managers/MissionManager.js';
 import { UIManager } from './ui/UIManager.js';
+import { RaceMode } from './race/RaceMode.js';
+import { RaceUI } from './race/RaceUI.js';
 
 // ─── Three.js Setup ────────────────────────────────────────────
 const canvas = document.getElementById('gameCanvas');
@@ -77,13 +79,17 @@ const ui      = new UIManager(gm, audio, missions);
 
 gm.loadProgress();
 
-// ─── Input → Player ────────────────────────────────────────────
-input.on('swipeLeft',    () => { if (gm.state === 'PLAYING') player.swipeLeft(); });
-input.on('swipeRight',   () => { if (gm.state === 'PLAYING') player.swipeRight(); });
-input.on('swipeUp',      () => { if (gm.state === 'PLAYING') player.jump(); });
-input.on('swipeDown',    () => { if (gm.state === 'PLAYING') player.slide(); });
-input.on('swipeFarLeft', () => { if (gm.state === 'PLAYING') player.swipeFarLeft(); });
-input.on('swipeFarRight',() => { if (gm.state === 'PLAYING') player.swipeFarRight(); });
+// ─── Daily Race (web only; drives its own deterministic sim) ──
+const raceMode = new RaceMode({ scene, gm, player, road, obsMgr, audio });
+const raceUI = new RaceUI({ ui, raceMode, payment: ui.payment });
+
+// ─── Input → Player (or the Daily Race sim while racing) ───────
+input.on('swipeLeft',    () => { if (raceMode.active) raceMode.input('L'); else if (gm.state === 'PLAYING') player.swipeLeft(); });
+input.on('swipeRight',   () => { if (raceMode.active) raceMode.input('R'); else if (gm.state === 'PLAYING') player.swipeRight(); });
+input.on('swipeUp',      () => { if (raceMode.active) raceMode.input('J'); else if (gm.state === 'PLAYING') player.jump(); });
+input.on('swipeDown',    () => { if (raceMode.active) raceMode.input('S'); else if (gm.state === 'PLAYING') player.slide(); });
+input.on('swipeFarLeft', () => { if (raceMode.active) raceMode.input('L'); else if (gm.state === 'PLAYING') player.swipeFarLeft(); });
+input.on('swipeFarRight',() => { if (raceMode.active) raceMode.input('R'); else if (gm.state === 'PLAYING') player.swipeFarRight(); });
 input.on('pause',        () => { if (gm.state === 'PLAYING') gm.pause(); else if (gm.state === 'PAUSED') gm.resume(); });
 
 // ─── State change → Reset world ────────────────────────────────
@@ -243,7 +249,11 @@ function animate() {
   requestAnimationFrame(animate);
   const delta = Math.min(clock.getDelta(), 0.05);
 
-  if (gm.state === 'PLAYING') {
+  if (raceMode.active) {
+    raceMode.update(delta);
+    updateCamera(delta);
+    updateParticles(delta);
+  } else if (gm.state === 'PLAYING') {
     gm.update(delta);
     player.update(delta);
     road.update(delta, gm.speed, gm.currentState.theme);
@@ -309,7 +319,7 @@ shopMgr.onApproach = (type, shop) => {
 };
 shopMgr.onPass = () => { serviceBanner.style.display = 'none'; };
 serviceBanner.addEventListener('click', () => shopMgr.enterActiveShop());
-window.shopMgr = shopMgr; window.gm = gm; window.player = player; window.police = police; window.obsMgr = obsMgr; window.road = road; window.input = input; window.ui = ui; // debug/testing hooks
+window.shopMgr = shopMgr; window.gm = gm; window.player = player; window.police = police; window.obsMgr = obsMgr; window.road = road; window.input = input; window.ui = ui; window.raceMode = raceMode; window.raceUI = raceUI; // debug/testing hooks
 
 // ─── Unlock audio + start lively menu music on first interaction ─
 function startAudio() {
