@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0A1A0A">
+  <meta name="description" content="Race your keke tricycle through all 36 Nigerian states. Dodge obstacles, collect coins, and become a Top Rider!">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="assets/img/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+  <title>Monkey Keke Dash</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./node_modules/three/build/three.module.js"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- Three.js Canvas -->
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- Blackout overlay for special effects -->
+  <div id="blackout-overlay"></div>
+
+  <!-- Juice overlays -->
+  <div id="speed-lines"></div>
+  <div id="hit-flash"></div>
+
+  <!-- ─── UI Root ─────────────────────────────────────────── -->
+  <div id="ui-root">
+
+    <!-- ══════════════════════════════════════════════════════
+         MAIN MENU
+    ════════════════════════════════════════════════════════ -->
+    <div id="screen-menu" class="screen active">
+      <div class="menu-coins">₦ <span id="menu-total-coins">0</span></div>
+      <div class="menu-audio">
+        <button id="btn-mute" class="audio-btn" aria-label="Mute / unmute">🔊</button>
+        <input id="volume-slider" class="volume-slider" type="range" min="0" max="100" value="70" aria-label="Volume">
+      </div>
+      <div class="menu-logo">
+        <h1 class="game-title">MONKEY KEKE <span>DASH</span></h1>
+        <p class="tagline">Race Through All 36 States!</p>
+      </div>
+      <div class="menu-buttons">
+        <button id="btn-play" class="btn-primary">▶ PLAY NOW</button>
+        <button id="btn-daily" class="btn-secondary">🎁 DAILY</button>
+        <button id="btn-missions" class="btn-secondary">🎯 MISSIONS</button>
+        <button id="btn-shop" class="btn-secondary">🔧 GARAGE</button>
+        <button id="btn-leaderboard" class="btn-secondary">🏆 TOP RIDERS</button>
+        <button id="btn-exit" class="btn-ghost">🚪 EXIT</button>
+      </div>
+      <div style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.4);font-size:13px;text-align:center;">
+        ← → Swipe lanes &nbsp;|&nbsp; ↑ Jump &nbsp;|&nbsp; ↓ Slide &nbsp;|&nbsp; Q = Risky Lane
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         HUD (DURING GAMEPLAY)
+    ════════════════════════════════════════════════════════ -->
+    <div id="screen-hud" class="screen">
+      <div class="hud-top">
+        <div class="hud-coins">₦ <span id="hud-coins">0</span></div>
+        <div class="hud-state">
+          <span id="hud-state-name">ABIA</span>
+          <div class="state-progress-bar">
+            <div id="state-progress-fill"></div>
+          </div>
+        </div>
+        <div class="hud-score"><span id="hud-score">0</span>m</div>
+      </div>
+
+      <!-- Level countdown timer -->
+      <div class="hud-timer" id="hud-timer">⏱ 45</div>
+
+      <!-- Required service-stop tracker (refuel mission) -->
+      <div class="hud-stops" id="hud-stops">⛽ 0/5</div>
+
+      <!-- Flashing service banner — tap to enter -->
+      <button id="service-banner" class="service-banner" style="display:none"></button>
+
+      <div class="hud-lives" id="hud-lives">❤️❤️❤️</div>
+      <div class="hud-multiplier" id="hud-multiplier" style="display:none">×<span id="multiplier-value">2</span></div>
+      <div class="hud-powerups" id="hud-powerups"></div>
+
+      <button id="btn-pause" class="btn-pause">⏸</button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         PAUSE SCREEN
+    ════════════════════════════════════════════════════════ -->
+    <div id="screen-pause" class="screen overlay">
+      <div class="panel">
+        <h2>⏸ PAUSED</h2>
+        <div style="color:rgba(255,255,255,0.6);font-size:16px;text-align:center;">
+          Take a breather, oga!
+        </div>
+        <button id="btn-resume" class="btn-primary">▶ RESUME</button>
+        <button id="btn-restart" class="btn-secondary">↺ RESTART</button>
+        <button id="btn-main-menu" class="btn-secondary">🏠 MAIN MENU</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         BAIL SCREEN (CAUGHT BY POLICE)
+    ════════════════════════════════════════════════════════ -->
+    <div id="screen-bail" class="screen overlay">
+      <div class="panel bail-panel">
+        <div class="police-icon">🚔</div>
+        <h2>YOU DON CATCH!</h2>
+        <p class="pidgin-text">Captain Fagbote say make you pay bail to continue your journey. No bail? Game over!</p>
+        <div class="bail-amount">₦ <span id="bail-amount">200</span></div>
+        <button id="btn-pay-bail" class="btn-danger">🔓 PAY BAIL</button>
+        <button id="btn-watch-ad" class="btn-secondary">📺 WATCH AD (FREE)</button>
+        <button id="btn-give-up" class="btn-ghost">Give Up</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         TIME UP — offer the advert revive (+time)
+    ════════════════════════════════════════════════════════ -->
+    <div id="screen-timeup" class="screen overlay">
+      <div class="panel bail-panel">
+        <div class="police-icon">⏰</div>
+        <h2>TIME DON FINISH!</h2>
+        <p class="pidgin-text">Watch one short advert and we go give you extra time to reach the border.</p>
+        <button id="btn-timeup-watch-ad" class="btn-secondary">📺 WATCH AD (FREE)</button>
+        <button id="btn-timeup-give-up" class="btn-ghost">Give Up</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         ADVERT (OLUKO) — plays to the end, cannot be skipped
+    ════════════════════════════════════════════════════════ -->
+    <div id="screen-ad" class="screen">
+      <video id="ad-video" playsinline webkit-playsinline preload="auto" disablepictureinpicture
+             controlslist="nodownload nofullscreen noremoteplayback"
+             src="assets/video/oluko-ad.mp4"></video>
+      <div class="ad-badge">AD · <span id="ad-countdown">18</span>s</div>
+      <div class="ad-note">Your ride continues after the advert</div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         SHOP SCREEN
+    ════════════════════════════════════════════════════════ -->
+    <div id="screen-shop" class="screen overlay">
+      <div class="panel shop-panel">
+        <h2 id="shop-name">FILLING STATION</h2>
+        <div style="color:rgba(255,255,255,0.5);font-size:13px;">Your ₦: <span id="shop-wallet" style="color:#FFD700;font-weight:900;">0</span></div>
+        <div id="shop-items"></div>
+        <button id="btn-shop-close" class="btn-secondary">✕ CONTINUE RACE</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         LEVEL COMPLETE (STATE CLEARED)
+    ════════════════════════════════════════════════════════ -->
+    <div id="screen-level-complete" class="screen overlay">
+      <div class="panel level-complete-panel">
+        <img id="lc-party" class="lc-party" src="assets/img/monkey-party.png" alt="Monkey celebration party">
+        <h2>🎉 STATE CLEARED! 🎉</h2>
+        <h3 id="lc-state-name">ABIA</h3>
+        <p id="lc-next-state" style="color:rgba(255,255,255,0.6);font-size:16px;">Next: ADAMAWA →</p>
+        <div class="bonus-coins">🪙 BONUS: ₦ <span id="lc-bonus">500</span></div>
+        <button id="btn-continue" class="btn-primary">NEXT STATE →</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         LEADERBOARD / TOP RIDERS
+    ════════════════════════════════════════════════════════ -->
+    <div id="screen-leaderboard" class="screen overlay">
+      <div class="panel leaderboard-panel">
+        <h2>🏆 TOP RIDERS</h2>
+        <div id="lb-stats" class="lb-stats"></div>
+        <div class="lb-table-head"><span>#</span><span>Distance</span><span>Reached</span><span>When</span></div>
+        <div id="lb-scores"></div>
+        <button id="btn-lb-close" class="btn-secondary">✕ BACK</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         USERNAME / JOIN LEADERBOARD  (after Abia)
+    ════════════════════════════════════════════════════════ -->
+    <div id="screen-username" class="screen overlay">
+      <div class="panel username-panel">
+        <div class="username-trophy">🏆</div>
+        <h2>JOIN TOP RIDERS!</h2>
+        <p class="username-sub">You cleared Abia, oga! Pick a rider name to put your distance on the global leaderboard.</p>
+        <input id="username-input" class="username-input" type="text" maxlength="16"
+               placeholder="Your rider name" autocomplete="off" autocapitalize="words"
+               spellcheck="false" inputmode="text">
+        <div id="username-error" class="username-error"></div>
+        <button id="btn-username-save" class="btn-primary">🏆 JOIN BOARD</button>
+        <button id="btn-username-skip" class="btn-ghost">Maybe later</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         GARAGE (VEHICLE UNLOCKS)
+    ════════════════════════════════════════════════════════ -->
+    <div id="screen-garage" class="screen overlay">
+      <div class="panel garage-panel">
+        <h2>🔧 GARAGE</h2>
+        <div class="garage-wallet">Your ₦: <span id="garage-wallet">0</span></div>
+        <div id="garage-items"></div>
+        <button id="btn-garage-close" class="btn-secondary">✕ BACK</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         DAILY REWARD
+    ════════════════════════════════════════════════════════ -->
+    <div id="screen-daily" class="screen overlay">
+      <div class="panel daily-panel">
+        <h2>🎁 DAILY GIFT</h2>
+        <p class="daily-streak">🔥 Day <span id="daily-streak-num">1</span> streak</p>
+        <div id="daily-cells"></div>
+        <button id="btn-daily-claim" class="btn-primary">CLAIM ₦<span id="daily-claim-amt">100</span></button>
+        <button id="btn-daily-close" class="btn-ghost">Close</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         MISSIONS
+    ════════════════════════════════════════════════════════ -->
+    <div id="screen-missions" class="screen overlay">
+      <div class="panel missions-panel">
+        <h2>🎯 MISSIONS</h2>
+        <p class="missions-sub">Finish a mission, bank the reward, get a fresh one.</p>
+        <div id="missions-list"></div>
+        <button id="btn-missions-close" class="btn-secondary">✕ BACK</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         GAME OVER
+    ════════════════════════════════════════════════════════ -->
+    <div id="screen-gameover" class="screen overlay">
+      <div class="panel">
+        <h2>GAME OVER!</h2>
+        <div class="gameover-stats">
+          <div>Distance: <span id="go-distance">0</span>m</div>
+          <div>Coins: ₦ <span id="go-coins">0</span></div>
+          <div>Reached: <span id="go-state">Abia</span></div>
+        </div>
+        <div style="border-top:1px solid rgba(255,255,255,0.1); margin:20px 0; padding:15px 0;">
+          <div style="font-size:13px; color:rgba(255,255,255,0.6); margin-bottom:10px; text-align:center;">Or continue for</div>
+          <button id="btn-continue-payment" class="btn-primary" style="width:100%; background:linear-gradient(135deg, #FFB81C, #FFA500);">💳 CONTINUE FOR ₦50</button>
+        </div>
+        <button id="btn-go-restart" class="btn-primary">↺ TRY AGAIN</button>
+        <button id="btn-go-menu" class="btn-secondary">🏠 MAIN MENU</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         NOTIFICATIONS & FLOATING TEXT
+    ════════════════════════════════════════════════════════ -->
+    <div id="notifications"></div>
+
+    <!-- Tutorial swipe hint -->
+    <div id="swipe-hint" class="swipe-hint" style="display:none">
+      <span>← →  LANE</span>
+      <span>↑  JUMP</span>
+      <span>↓  SLIDE</span>
+      <span>Q  RISKY!</span>
+    </div>
+
+  </div><!-- /#ui-root -->
+
+  <script type="module" src="js/main.js"></script>
+
+  <script>
+    // PWA offline support on the web only — the Android app already bundles
+    // every file, so skip the service worker inside Capacitor.
+    const isNativeApp = window.Capacitor?.isNativePlatform?.();
+    if ('serviceWorker' in navigator && !isNativeApp) {
+      navigator.serviceWorker.register('service-worker.js')
+        .catch(err => console.warn('Service Worker registration failed:', err));
+    }
+  </script>
+</body>
+</html>

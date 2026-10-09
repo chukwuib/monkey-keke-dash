@@ -1,0 +1,23 @@
+{
+  "id": "./",
+  "name": "Monkey Keke Dash",
+  "short_name": "Keke Dash",
+  "description": "Race your keke tricycle through all 36 Nigerian states. Dodge obstacles, collect coins, and become a Top Rider!",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "portrait",
+  "theme_color": "#0A1A0A",
+  "background_color": "#0A1A0A",
+  "icons": [
+    { "src": "assets/img/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/img/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "categories": ["games"],
+  "screenshots": [
+    { "src": "assets/img/screenshot-1.jpg", "sizes": "720x1280", "type": "image/jpeg", "form_factor": "narrow", "label": "Riding through Ariaria Market" },
+    { "src": "assets/img/screenshot-2.jpg", "sizes": "720x1280", "type": "image/jpeg", "form_factor": "narrow", "label": "Dodge obstacles across 36 states" }
+  ]
+}
